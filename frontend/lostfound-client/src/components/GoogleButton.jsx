@@ -97,7 +97,7 @@ export default function GoogleButton({ onSuccess, onError }) {
         <div style={{ color: 'crimson', fontWeight: 600, marginBottom: 8 }}>Google sign-in unavailable</div>
         <div style={{ color: '#111', marginBottom: 8 }}>{err}</div>
         <div style={{ fontSize: 13, color: '#444' }}>
-          Common fixes: ensure <code>VITE_GOOGLE_CLIENT_ID</code> is set, and the client has <strong>http://localhost:5173</strong>
+          Common fixes: ensure <code>VITE_GOOGLE_CLIENT_ID</code> is set, and the client has <strong>{window.location.origin}</strong>
           under Authorized JavaScript origins in Google Cloud Console.
         </div>
       </div>
