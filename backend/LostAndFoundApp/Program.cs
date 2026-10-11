@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using LostAndFoundApp.Data;
+using Npgsql;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -81,6 +82,8 @@ builder.Services.AddCors(options =>
 var connectionString = configuration.GetConnectionString("DefaultConnection")
                        ?? configuration["ConnectionStrings:Default"]
                        ?? "Host=localhost;Port=5432;Database=lostandfounddb;Username=postgres;Password=change-me";
+connectionString = NormalizePostgresConnectionString(connectionString);
+
 // Configure database provider. Use PostgreSQL in non-testing environments, and a
 // lightweight SQLite file for the `Testing` environment so the hosted app in CI
 // can serve test requests without requiring a MySQL server.
@@ -322,6 +325,41 @@ app.MapHub<LostAndFoundApp.Hubs.MessagingHub>("/hubs/messages");
 // Lightweight health endpoint used by CI to verify the server is responding.
 // Returns 200 OK with a small JSON payload.
 app.MapGet("/health", () => Results.Json(new { status = "ok" }));
+
+static string NormalizePostgresConnectionString(string connectionString)
+{
+    if (!Uri.TryCreate(connectionString, UriKind.Absolute, out var uri) ||
+        (uri.Scheme != "postgresql" && uri.Scheme != "postgres"))
+    {
+        return connectionString;
+    }
+
+    var userInfoSeparator = uri.UserInfo.IndexOf(':');
+    if (userInfoSeparator <= 0)
+    {
+        throw new InvalidOperationException("The PostgreSQL connection URI must include a username and password.");
+    }
+
+    var username = Uri.UnescapeDataString(uri.UserInfo[..userInfoSeparator]);
+    var password = Uri.UnescapeDataString(uri.UserInfo[(userInfoSeparator + 1)..]);
+    var database = Uri.UnescapeDataString(uri.AbsolutePath.TrimStart('/'));
+    if (string.IsNullOrWhiteSpace(database))
+    {
+        throw new InvalidOperationException("The PostgreSQL connection URI must include a database name.");
+    }
+
+    var builder = new NpgsqlConnectionStringBuilder
+    {
+        Host = uri.Host,
+        Port = uri.Port > 0 ? uri.Port : 5432,
+        Database = database,
+        Username = username,
+        Password = password,
+        SslMode = SslMode.Require
+    };
+
+    return builder.ConnectionString;
+}
 
 app.Run();
 
