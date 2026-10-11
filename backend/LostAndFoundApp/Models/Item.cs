@@ -20,6 +20,6 @@ namespace LostAndFoundApp.Models
         public bool IsDeleted { get; set; } = false;
         public DateTime? DeletedAt { get; set; }
         public int? DeletedByUserId { get; set; }
-        public ICollection<ItemImage>? Images { get; set; } = new List<ItemImage>();
+        public ICollection<ItemImage> Images { get; set; } = new List<ItemImage>();
     }
 }
