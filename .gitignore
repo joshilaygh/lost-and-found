@@ -45,5 +45,18 @@ secrets.json
 .env
 .env.*
 
-# uploads folder
+# Neon local metadata and downloaded agent skills
+.neon
+.agents/
+skills-lock.json
+
+# Local data and generated artifacts
+artifacts/
+*.db
+*.db-shm
+*.db-wal
+coverage/
+TestResults/
+
+# Uploads folder
 LostAndFoundUploads/

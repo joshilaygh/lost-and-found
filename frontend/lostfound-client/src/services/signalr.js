@@ -1,5 +1,6 @@
 import * as signalR from '@microsoft/signalr';
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
 let connection = null;
 const handlers = {
   ReceiveMessage: new Set(),
@@ -13,7 +14,7 @@ export async function start(token) {
   if (connection) return connection;
 
   connection = new signalR.HubConnectionBuilder()
-    .withUrl('/hubs/messages', {
+    .withUrl(`${API_BASE}/hubs/messages`, {
       accessTokenFactory: () => token || localStorage.getItem('app_jwt') || ''
     })
     .withAutomaticReconnect()

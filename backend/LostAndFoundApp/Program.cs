@@ -77,11 +77,11 @@ builder.Services.AddCors(options =>
     });
 });
 
-// Database (MySQL / Pomelo)
+// Database (PostgreSQL / Npgsql)
 var connectionString = configuration.GetConnectionString("DefaultConnection")
                        ?? configuration["ConnectionStrings:Default"]
-                       ?? "server=localhost;user=root;password=root;database=lostandfounddb";
-// Configure database provider. Use MySQL in non-testing environments, and a
+                       ?? "Host=localhost;Port=5432;Database=lostandfounddb;Username=postgres;Password=change-me";
+// Configure database provider. Use PostgreSQL in non-testing environments, and a
 // lightweight SQLite file for the `Testing` environment so the hosted app in CI
 // can serve test requests without requiring a MySQL server.
 if (builder.Environment.IsEnvironment("Testing"))
@@ -96,11 +96,10 @@ if (builder.Environment.IsEnvironment("Testing"))
 else
 {
     // During integration tests (external test projects) they may register a
-    // different provider; but for normal runs use MySQL by default.
+    // different provider; but for normal runs use PostgreSQL by default.
     builder.Services.AddDbContext<AppDbContext>(options =>
     {
-        // ServerVersion.AutoDetect will inspect the connection; it's convenient for local/dev
-        options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString));
+        options.UseNpgsql(connectionString);
     });
 }
 
@@ -215,6 +214,13 @@ if (app.Environment.IsEnvironment("Testing"))
     {
         app.Logger.LogError(ex, "Failed to prepare database for Testing environment.");
     }
+}
+else
+{
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.Migrate();
+    app.Logger.LogInformation("Applied database migrations.");
 }
 
 // --- Middleware pipeline ---
