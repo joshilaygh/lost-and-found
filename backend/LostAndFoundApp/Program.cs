@@ -259,7 +259,8 @@ if (app.Environment.IsDevelopment() && !app.Environment.IsEnvironment("Testing")
 // In the Testing environment we host on plain HTTP in CI. Avoid forcing
 // HTTPS redirection there because the runner does not configure HTTPS endpoints
 // and the redirect would cause POSTs to receive 3xx responses instead of 200.
-if (!app.Environment.IsEnvironment("Testing"))
+if (!app.Environment.IsEnvironment("Testing") &&
+    !string.IsNullOrWhiteSpace(app.Configuration["Https:Port"]))
 {
     app.UseHttpsRedirection();
 }
@@ -271,16 +272,8 @@ app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Ensure uploads directory exists on startup. Prefer configured Uploads:RootPath, otherwise use webroot/wwwroot.
-try
-{
-}
-catch (Exception ex)
-{
-    app.Logger.LogError(ex, "Failed to ensure uploads directory exists on startup");
-}
 // Resolve and ensure uploads directory exists on startup. Prefer configured Uploads:RootPath,
-// otherwise default to the user's Pictures folder requested during development.
+// otherwise use the application content directory, which works on every host OS.
 try
 {
     var configured = app.Configuration["Uploads:RootPath"];
@@ -291,8 +284,7 @@ try
     }
     else
     {
-        // Default uploads path requested by the developer
-        uploadsRoot = @"C:\Users\admin\Pictures\VsCodeImages";
+        uploadsRoot = Path.Combine(app.Environment.ContentRootPath, "wwwroot");
         app.Logger.LogInformation("Uploads:RootPath not configured. Defaulting uploads root to {UploadsRoot}", uploadsRoot);
     }
 
