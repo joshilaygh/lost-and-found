@@ -44,7 +44,12 @@ namespace LostAndFoundApp.Controllers
             if (!string.IsNullOrWhiteSpace(q))
             {
                 var s = q.Trim();
-                query = query.Where(i => i.Name.Contains(s) || (i.Description != null && i.Description.Contains(s)) || (i.Location != null && i.Location.Contains(s)));
+                var hasNumericId = int.TryParse(s, out var itemId);
+                query = query.Where(i =>
+                    (hasNumericId && i.Id == itemId) ||
+                    i.Name.Contains(s) ||
+                    (i.Description != null && i.Description.Contains(s)) ||
+                    (i.Location != null && i.Location.Contains(s)));
             }
 
             if (hasPrimaryImage.HasValue)
