@@ -55,6 +55,11 @@ namespace LostAndFoundApp.Hubs
             return Enumerable.Empty<string>();
         }
 
+        public static int GetActiveUserCount()
+        {
+            return _userConnections.Count;
+        }
+
         // Optional: allow client to call hub directly to send ephemeral message.
         // Recommended pattern: client POSTs to API to persist message; server notifies via hub.
         public async Task SendPrivateMessage(int receiverId, string content)

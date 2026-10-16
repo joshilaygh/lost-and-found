@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
 using LostAndFoundApp.Dtos;
 using LostAndFoundApp.Models;
+using LostAndFoundApp.Hubs;
 
 namespace LostAndFoundApp.Controllers
 {
@@ -25,6 +26,13 @@ namespace LostAndFoundApp.Controllers
             _cache = cache;
             _httpFactory = httpFactory;
             _logger = logger;
+        }
+
+        [Authorize]
+        [HttpGet("online-count")]
+        public IActionResult GetOnlineCount()
+        {
+            return Ok(new { count = MessagingHub.GetActiveUserCount() });
         }
 
         [HttpGet("{id}/avatar")]
