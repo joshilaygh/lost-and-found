@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { getItemImages, uploadItemImages, deleteItemImage, setItemPrimary } from '../services/itemImage';
+import { apiUrl } from '../services/apiUrl';
 
 export default function ItemImagesManager({ itemId, initialImages = [], onChange, canManage = true }) {
   const [images, setImages] = useState(initialImages || []);
@@ -76,7 +77,7 @@ export default function ItemImagesManager({ itemId, initialImages = [], onChange
         {images.map(img => (
           <div key={img.id || img.fileName} style={{ width: 96, textAlign: 'center', position: 'relative' }}>
             <div style={{ width: 96, height: 96, borderRadius: 8, overflow: 'hidden', background: '#f3f4f6' }}>
-              <img src={img.url || img.Url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <img src={apiUrl(img.url || img.Url)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             </div>
             {img.isPrimary && <div style={{ position: 'absolute', left: 6, top: 6, background: 'var(--accent)', color: '#fff', padding: '2px 6px', borderRadius: 6, fontSize: 12 }}>Primary</div>}
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: 6, marginTop: 6 }}>

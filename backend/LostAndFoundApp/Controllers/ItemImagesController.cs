@@ -43,11 +43,10 @@ public class ItemImagesController : ControllerBase
     public async Task<IActionResult> GetImages(int itemId)
     {
         var imgs = await _db.ItemImages.Where(i => i.ItemId == itemId).OrderByDescending(i => i.IsPrimary).ThenBy(i => i.CreatedAt).ToListAsync();
-        var baseAddress = $"{Request.Scheme}://{Request.Host}";
         var result = imgs.Select(i => new {
             i.Id,
             i.FileName,
-            Url = baseAddress + (i.Url ?? string.Empty),
+            Url = i.Url,
             i.IsPrimary,
             i.CreatedAt
         }).ToList();
@@ -152,13 +151,11 @@ public class ItemImagesController : ControllerBase
 
             await _db.SaveChangesAsync();
 
-            // return created images (including Ids) as lightweight DTOs to avoid navigation cycles
-            // Build absolute URLs for the response so the frontend can load images directly
-            var baseAddress = $"{Request.Scheme}://{Request.Host}";
+            // Return relative URLs so the frontend can resolve them against its configured API origin.
             var result = added.Select(a => new {
                 a.Id,
                 a.FileName,
-                Url = baseAddress + (a.Url ?? string.Empty),
+                Url = a.Url,
                 a.IsPrimary,
                 a.CreatedAt
             }).ToList();
@@ -326,8 +323,7 @@ public class ItemImagesController : ControllerBase
             // remove temp folder
             try { Directory.Delete(tempFolder, true); } catch { }
 
-            var baseAddress = $"{Request.Scheme}://{Request.Host}";
-            var result = added.Select(a => new { a.Id, a.FileName, Url = baseAddress + (a.Url ?? string.Empty), a.IsPrimary, a.CreatedAt }).ToList();
+            var result = added.Select(a => new { a.Id, a.FileName, Url = a.Url, a.IsPrimary, a.CreatedAt }).ToList();
             return Ok(result);
         }
         catch (Exception ex)

@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { listItems, deleteItem } from '../services/items';
 import { useAuth } from '../AuthContext';
+import { apiUrl } from '../services/apiUrl';
 
 export default function ItemsList() {
   const [items, setItems] = useState([]);
@@ -100,7 +101,7 @@ export default function ItemsList() {
               <div style={{ position: 'absolute', left: 0, right: 0, background: 'var(--card)', boxShadow: '0 6px 18px rgba(0,0,0,0.06)', zIndex: 60 }}>
                 {suggestions.map((it, idx) => (
                   <div key={it.id} onMouseEnter={() => setSuggestIndex(idx)} onMouseLeave={() => setSuggestIndex(-1)} style={{ padding: 8, cursor: 'pointer', display: 'flex', gap: 8, alignItems: 'center', background: suggestIndex === idx ? '#eef2ff' : 'transparent' }} onClick={() => navigate(`/items/${it.id}`)}>
-                    {it.primaryImageUrl ? <img src={it.primaryImageUrl} alt="pri" style={{ width: 48, height: 36, objectFit: 'cover', borderRadius: 6 }} /> : <div style={{ width: 48, height: 36, background: '#f3f4f6', borderRadius: 6 }} />}
+                    {it.primaryImageUrl ? <img src={apiUrl(it.primaryImageUrl)} alt="pri" style={{ width: 48, height: 36, objectFit: 'cover', borderRadius: 6 }} /> : <div style={{ width: 48, height: 36, background: '#f3f4f6', borderRadius: 6 }} />}
                     <div>{it.id} — {it.name}</div>
                   </div>
                 ))}
@@ -137,7 +138,7 @@ export default function ItemsList() {
                 <td style={{ width: 80 }}>
                   {(() => {
                     const url = it.primaryImageUrl ?? it.primaryImage?.url ?? it.primaryImage?.Url ?? (it.images && it.images.find(x => x.isPrimary)?.url) ?? (it.images && it.images.find(x => x.isPrimary)?.Url);
-                    return url ? <img src={url} alt="primary" style={{ width: 64, height: 48, objectFit: 'cover', borderRadius: 6 }} /> : <div style={{ width: 64, height: 48, background: '#f3f4f6', borderRadius: 6 }} />;
+                    return url ? <img src={apiUrl(url)} alt="primary" style={{ width: 64, height: 48, objectFit: 'cover', borderRadius: 6 }} /> : <div style={{ width: 64, height: 48, background: '#f3f4f6', borderRadius: 6 }} />;
                   })()}
                 </td>
                 <td><Link to={`/items/${it.id}`}>{it.name}</Link></td>
