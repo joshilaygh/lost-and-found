@@ -5,6 +5,7 @@ import { uploadItemImages, uploadTempImages, attachTempToItem, deleteTempUploads
 import ItemImagesManager from '../components/ItemImagesManager';
 import { useAuth } from '../AuthContext';
 import { listCategories, listItemTypes, listStatuses } from '../services/lookups';
+import { apiUrl } from '../services/apiUrl';
 
 export default function ItemForm() {
   const { id } = useParams();
@@ -145,7 +146,7 @@ export default function ItemForm() {
                 <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
                   {tempUpload.files.map((f, idx) => (
                     <div key={idx} style={{ width: 120, textAlign: 'center' }}>
-                      <img src={f.url} alt={f.fileName} style={{ width: '100%', height: 80, objectFit: 'cover', borderRadius: 6 }} />
+                      <img src={apiUrl(f.url)} alt={f.fileName} style={{ width: '100%', height: 80, objectFit: 'cover', borderRadius: 6 }} />
                       <div style={{ fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.fileName}</div>
                     </div>
                   ))}
@@ -180,7 +181,7 @@ export default function ItemForm() {
                   <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
                     {tempUpload.files.map((f, idx) => (
                       <div key={idx} style={{ width: 120, textAlign: 'center' }}>
-                        <img src={f.url} alt={f.fileName} style={{ width: '100%', height: 80, objectFit: 'cover', borderRadius: 6 }} />
+                        <img src={apiUrl(f.url)} alt={f.fileName} style={{ width: '100%', height: 80, objectFit: 'cover', borderRadius: 6 }} />
                         <div style={{ fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.fileName}</div>
                       </div>
                     ))}

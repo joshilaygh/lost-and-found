@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { apiUrl } from "../services/apiUrl";
 
 export default function AvatarUpload({ jwt, onUploaded }) {
     const [preview, setPreview] = useState(null);
@@ -27,7 +28,7 @@ export default function AvatarUpload({ jwt, onUploaded }) {
         try {
             const body = new FormData();
             body.append("avatar", file);
-            const res = await fetch("/api/users/me/avatar", {
+            const res = await fetch(apiUrl("/api/users/me/avatar"), {
                 method: "POST",
                 headers: {
                     Authorization: jwt ? `Bearer ${jwt}` : undefined,

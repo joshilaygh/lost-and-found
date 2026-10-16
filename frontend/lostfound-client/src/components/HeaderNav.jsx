@@ -30,7 +30,31 @@ export default function HeaderNav() {
     }
   }
 
-  const { user } = useAuth();
+  const { user: authUser } = useAuth();
+  const [storedUser, setStoredUser] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('lf_user') || 'null');
+    } catch {
+      return null;
+    }
+  });
+  const user = authUser || storedUser;
+
+  useEffect(() => {
+    function syncUser() {
+      try {
+        setStoredUser(JSON.parse(localStorage.getItem('lf_user') || 'null'));
+      } catch {
+        setStoredUser(null);
+      }
+    }
+    window.addEventListener('lf:authChanged', syncUser);
+    window.addEventListener('storage', syncUser);
+    return () => {
+      window.removeEventListener('lf:authChanged', syncUser);
+      window.removeEventListener('storage', syncUser);
+    };
+  }, []);
 
   useEffect(() => {
     function onDocClick(e) {

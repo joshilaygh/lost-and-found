@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
 import Dashboard from './pages/Dashboard';
@@ -7,6 +7,7 @@ import DeletedUsersList from './pages/DeletedUsersList';
 import ProtectedRoute from './components/ProtectedRoute';
 import authService from './services/auth';
 import GoogleButton from './components/GoogleButton';
+import { disableGoogleAutoSelect } from './components/GoogleButton';
 import Layout from './components/Layout';
 import AccountMenu from './components/AccountMenu';
 import Profile from './pages/Profile';
@@ -26,6 +27,7 @@ import UserItems from './pages/UserItems';
 import ChatWindow from './pages/ChatWindow';
 import Conversations from './pages/Conversations';
 import Notifications from './pages/Notifications';
+import { apiUrl } from './services/apiUrl';
 
 function AppRoutes({ jwt, setJwt, user, setUser, signOut }) {
   return (
@@ -43,6 +45,7 @@ function AppRoutes({ jwt, setJwt, user, setUser, signOut }) {
                 if (res?.token) {
                   localStorage.setItem('app_jwt', res.token);
                   localStorage.setItem('lf_user', JSON.stringify(res.user));
+                  window.dispatchEvent(new Event('lf:authChanged'));
                   setJwt(res.token);
                   setUser(res.user);
                 }
@@ -88,17 +91,20 @@ export default function App() {
   function signOut() {
     localStorage.removeItem('app_jwt');
     localStorage.removeItem('lf_user');
+    window.dispatchEvent(new Event('lf:authChanged'));
+    disableGoogleAutoSelect();
     setJwt(null);
     setUser(null);
     // signalR connection is stopped by AuthContext.signOut
   }
 
   // sign-in handler used by header GoogleButton and LoginPage
-  async function handleSignIn(idToken) {
+  const handleSignIn = useCallback(async (idToken) => {
     const res = await authService.signInWithGoogle(idToken);
     if (res?.token) {
       localStorage.setItem('app_jwt', res.token);
       localStorage.setItem('lf_user', JSON.stringify(res.user));
+      window.dispatchEvent(new Event('lf:authChanged'));
       setJwt(res.token);
       setUser(res.user);
       // Dev-only reload to mitigate init races across the SPA. Remove after audit.
@@ -110,7 +116,7 @@ export default function App() {
         console.error('Dev reload failed:', err);
       }
     }
-  }
+  }, []);
 
   // compute avatar source
   const fallback = 'data:image/svg+xml;utf8,' + encodeURIComponent(
@@ -120,7 +126,9 @@ export default function App() {
     '</svg>'
   );
 
-  const avatarSrc = user?.avatarUrl || (user?.id ? `/api/users/${user.id}/avatar` : null) || fallback;
+  const avatarSrc = user?.avatarUrl
+    ? apiUrl(user.avatarUrl)
+    : (user?.id ? apiUrl(`/api/users/${user.id}/avatar`) : null) || fallback;
 
   const headerRight = jwt ? (
     // use AccountMenu to present a single compact account area with dropdown

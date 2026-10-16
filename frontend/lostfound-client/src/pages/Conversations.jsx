@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { fetchConversationSummaries, deleteConversation } from '../services/messageApi';
+import { apiUrl } from '../services/apiUrl';
 
 // Conversations page — shows conversation summaries and navigates to per-user chat
 export default function Conversations() {
@@ -70,7 +71,7 @@ export default function Conversations() {
             <div 
               style={{ width: 40, height: 40, borderRadius: 8, background: '#eef2f7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               {<img
-                src={`/api/users/${c.otherUserId}/avatar`}
+                src={apiUrl(`/api/users/${c.otherUserId}/avatar`)}
                 alt={c.otherUserName ? `${c.otherUserName} avatar` : 'avatar'}
                 onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/favicon.ico'; }}
                 style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 8 }}

@@ -3,6 +3,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
 import { getUnreadMessageCount, fetchConversationSummaries, fetchNotifications, markNotificationRead } from '../services/messageApi';
 import { on as onSignal } from '../services/signalr';
+import { apiUrl } from '../services/apiUrl';
+import { disableGoogleAutoSelect } from './GoogleButton';
+import signalRService from '../services/signalr';
 
 export default function AccountMenu({ user: propUser, onSignOut }) {
   const [open, setOpen] = useState(false);
@@ -87,13 +90,10 @@ export default function AccountMenu({ user: propUser, onSignOut }) {
   }, []);
 
   useEffect(() => {
-    if (propUser) setUser(propUser);
-    else if (auth?.user) setUser(auth.user);
-  }, [propUser]);
-
-  useEffect(() => {
-    if (auth?.user) setUser(auth.user);
-  }, [auth?.user]);
+    // App owns the authenticated user. Always synchronize, including when
+    // the previous user is cleared during sign out.
+    setUser(propUser ?? auth?.user ?? null);
+  }, [propUser, auth?.user]);
 
   // reload conversations/notifications when their dropdowns open
   useEffect(() => {
@@ -224,11 +224,17 @@ export default function AccountMenu({ user: propUser, onSignOut }) {
     };
   }, [auth?.user]);
 
-  const avatarSrc = user?.avatarUrl || (user?.id ? `/api/users/${user.id}/avatar` : null) || null;
+  const avatarSrc = user?.avatarUrl
+    ? apiUrl(user.avatarUrl)
+    : (user?.id ? apiUrl(`/api/users/${user.id}/avatar`) : null) || null;
 
   function handleSignOut() {
     localStorage.removeItem('app_jwt');
     localStorage.removeItem('lf_user');
+    disableGoogleAutoSelect();
+    signalRService.stop().catch((error) => {
+      console.error('SignalR stop failed during sign out:', error);
+    });
     setOpen(false);
     if (onSignOut) onSignOut();
     navigate('/login');
@@ -238,7 +244,7 @@ export default function AccountMenu({ user: propUser, onSignOut }) {
     <div className="account-menu" ref={ref}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div style={{ position: 'relative' }}>
-            <button title="Notifications" onClick={() => setNotifOpen(v => !v)} aria-expanded={notifOpen} className="account-notifications-button" style={{ position: 'relative', background: 'transparent', border: 'none', cursor: 'pointer', padding: 6, marginRight: 4 }}>
+            <button title="Notifications" onClick={() => { setNotifOpen(v => !v); setConvOpen(false); }} aria-expanded={notifOpen} className="account-notifications-button" style={{ position: 'relative', background: 'transparent', border: 'none', cursor: 'pointer', padding: 6, marginRight: 4 }}>
               <span style={{ fontSize: 18 }}>🔔</span>
               {unreadNotifications > 0 && (
                 <span style={{ position: 'absolute', right: -6, top: -8, background: 'var(--accent)', color: '#fff', borderRadius: 12, padding: '2px 6px', fontSize: 12, fontWeight: 700, zIndex: 999, boxShadow: '0 1px 4px rgba(0,0,0,0.25)' }}>{unreadNotifications}</span>
@@ -263,7 +269,7 @@ export default function AccountMenu({ user: propUser, onSignOut }) {
                 </div>
               </div>
             )}
-            <button title="Messages" onClick={() => setConvOpen(v => !v)} aria-expanded={convOpen} className="account-messages-button" style={{ position: 'relative', background: 'transparent', border: 'none', cursor: 'pointer', padding: 6 }}>
+            <button title="Messages" onClick={() => { setConvOpen(v => !v); setNotifOpen(false); }} aria-expanded={convOpen} className="account-messages-button" style={{ position: 'relative', background: 'transparent', border: 'none', cursor: 'pointer', padding: 6 }}>
               <span style={{ fontSize: 18 }}>✉️</span>
             {/* Numeric badge for number of users with unread messages */}
             {unreadMessages > 0 && (
@@ -321,14 +327,16 @@ export default function AccountMenu({ user: propUser, onSignOut }) {
                     {/*<div 
                       style={{ width: 40, height: 40, borderRadius: 8, background: '#eef2f7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       {<img
-                        src={c.otherUser?.avatarUrl || (c.otherUser?.id ? `/api/users/${c.otherUser?.id}/avatar` : null)}
+                        src={c.otherUser?.avatarUrl
+                          ? apiUrl(c.otherUser.avatarUrl)
+                          : (c.otherUser?.id ? apiUrl(`/api/users/${c.otherUser.id}/avatar`) : null)}
                         alt="avatar"
                       />}
                     </div>*/}
                     <div 
                       style={{ width: 40, height: 40, borderRadius: 8, background: '#eef2f7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       {<img
-                        src={`/api/users/${c.otherUserId}/avatar`}
+                        src={apiUrl(`/api/users/${c.otherUserId}/avatar`)}
                         alt={c.otherUserName ? `${c.otherUserName} avatar` : 'avatar'}
                         onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/favicon.ico'; }}
                       />}

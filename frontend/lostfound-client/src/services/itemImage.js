@@ -1,14 +1,17 @@
+import { apiUrl } from './apiUrl';
+
 async function getAuthHeaders() {
   const token = localStorage.getItem('app_jwt');
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
 export async function getItemImages(itemId) {
-  const res = await fetch(`/api/items/${itemId}/images`, {
+  const res = await fetch(apiUrl(`/api/items/${itemId}/images`), {
     headers: await getAuthHeaders()
   });
   if (!res.ok) throw new Error('Failed to fetch images');
-  return res.json();
+  const images = await res.json();
+  return images.map(image => ({ ...image, url: apiUrl(image.url || image.Url) }));
 }
 
 export async function uploadItemImages(itemId, files, onProgress) {
@@ -20,7 +23,7 @@ export async function uploadItemImages(itemId, files, onProgress) {
   const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
   // Using fetch; progress needs xhr for per-file progress (optional).
-  const res = await fetch(`/api/items/${itemId}/images`, {
+  const res = await fetch(apiUrl(`/api/items/${itemId}/images`), {
     method: 'POST',
     headers,
     body: form
@@ -36,12 +39,13 @@ export async function uploadItemImages(itemId, files, onProgress) {
     }
     throw new Error(msg || 'Upload failed');
   }
-  return res.json(); // returns array of created images
+  const images = await res.json();
+  return images.map(image => ({ ...image, url: apiUrl(image.url || image.Url) }));
 }
 
 export async function deleteItemImage(itemId, imageId) {
   const token = localStorage.getItem('app_jwt');
-  const res = await fetch(`/api/items/${itemId}/images/${imageId}`, {
+  const res = await fetch(apiUrl(`/api/items/${itemId}/images/${imageId}`), {
     method: 'DELETE',
     headers: token ? { Authorization: `Bearer ${token}` } : {}
   });
@@ -51,7 +55,7 @@ export async function deleteItemImage(itemId, imageId) {
 
 export async function setItemPrimary(itemId, imageId) {
   const token = localStorage.getItem('app_jwt');
-  const res = await fetch(`/api/items/${itemId}/images/${imageId}/set-primary`, {
+  const res = await fetch(apiUrl(`/api/items/${itemId}/images/${imageId}/set-primary`), {
     method: 'POST',
     headers: token ? { Authorization: `Bearer ${token}` } : {}
   });
@@ -66,7 +70,7 @@ export async function uploadTempImages(files) {
   const token = localStorage.getItem('app_jwt');
   const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-  const res = await fetch(`/api/items/temp-images`, {
+  const res = await fetch(apiUrl('/api/items/temp-images'), {
     method: 'POST',
     headers,
     body: form
@@ -76,12 +80,16 @@ export async function uploadTempImages(files) {
     try { msg = (await res.json())?.message || msg; } catch { try { msg = await res.text(); } catch {} }
     throw new Error(msg);
   }
-  return res.json(); // { tempId, files: [{ fileName, url }] }
+  const result = await res.json();
+  return {
+    ...result,
+    files: (result.files || []).map(file => ({ ...file, url: apiUrl(file.url || file.Url) }))
+  };
 }
 
 export async function attachTempToItem(itemId, tempId) {
   const token = localStorage.getItem('app_jwt');
-  const res = await fetch(`/api/items/${itemId}/images/attach-temp/${encodeURIComponent(tempId)}`, {
+  const res = await fetch(apiUrl(`/api/items/${itemId}/images/attach-temp/${encodeURIComponent(tempId)}`), {
     method: 'POST',
     headers: token ? { Authorization: `Bearer ${token}` } : {}
   });
@@ -90,12 +98,13 @@ export async function attachTempToItem(itemId, tempId) {
     try { msg = (await res.json())?.message || msg; } catch { try { msg = await res.text(); } catch {} }
     throw new Error(msg);
   }
-  return res.json(); // created images
+  const images = await res.json();
+  return images.map(image => ({ ...image, url: apiUrl(image.url || image.Url) }));
 }
 
 export async function deleteTempUploads(tempId) {
   const token = localStorage.getItem('app_jwt');
-  const res = await fetch(`/api/items/temp-images/${encodeURIComponent(tempId)}`, {
+  const res = await fetch(apiUrl(`/api/items/temp-images/${encodeURIComponent(tempId)}`), {
     method: 'DELETE',
     headers: token ? { Authorization: `Bearer ${token}` } : {}
   });

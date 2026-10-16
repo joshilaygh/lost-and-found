@@ -1,4 +1,6 @@
-const API = '/api/users';
+import { apiUrl } from './apiUrl';
+
+const API = apiUrl('/api/users');
 
 function getAuthHeaders() {
   const token = localStorage.getItem('app_jwt');
@@ -41,4 +43,11 @@ export async function updateUserRole(id, roleName) {
   });
   if (!res.ok) throw new Error(await res.text());
   return res.json(); // { id, roleName }
+}
+
+export async function getOnlineUserCount() {
+  const res = await fetch(`${API}/online-count`, { headers: getAuthHeaders() });
+  if (!res.ok) throw new Error(await res.text());
+  const data = await res.json();
+  return Number(data.count) || 0;
 }

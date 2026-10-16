@@ -3,6 +3,12 @@ import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
 import { getItem } from '../services/items';
 import { getItemImages, deleteItemImage, setItemPrimary, uploadItemImages } from '../services/itemImage';
+import { apiUrl } from '../services/apiUrl';
+
+function normalizeImage(image) {
+  const rawUrl = image?.url ?? image?.Url;
+  return { ...image, url: rawUrl ? apiUrl(rawUrl) : null };
+}
 
 export default function ItemDetails() {
   const { id } = useParams();
@@ -16,16 +22,15 @@ export default function ItemDetails() {
       try {
         const res = await getItem(id);
         setItem(res);
-        // try to get images from item payload or fetch
-        const imgs = res?.images ?? res?.Images ?? null;
-        if (imgs && Array.isArray(imgs)) {
-          setImages(imgs);
-        } else {
-          try {
-            const fetched = await getItemImages(id);
-            setImages(fetched);
-          } catch (e) {
-            // ignore - images may not exist yet
+        const payloadImages = res?.images ?? res?.Images;
+        try {
+          const fetched = await getItemImages(id);
+          setImages(fetched.map(normalizeImage));
+        } catch (e) {
+          if (Array.isArray(payloadImages)) {
+            setImages(payloadImages.map(normalizeImage));
+          } else {
+            console.error('Failed to load item images', e);
           }
         }
       } catch (e) {
@@ -42,7 +47,12 @@ export default function ItemDetails() {
   if (!item) return <div className="card">Not found</div>;
 
   // determine primary image url from images or item property
-  const primaryUrl = images.find(i => i.isPrimary)?.url ?? images.find(i => i.isPrimary)?.Url ?? item.primaryImageUrl ?? item.primaryImage?.url ?? item.primaryImage?.Url ?? (images[0] && (images[0].url || images[0].Url)) ?? null;
+  const primaryImage = images.find(i => i.isPrimary ?? i.IsPrimary) ?? images[0];
+  const primaryUrl = primaryImage?.url
+    ?? (item.primaryImageUrl ? apiUrl(item.primaryImageUrl) : null)
+    ?? (item.primaryImage?.url ? apiUrl(item.primaryImage.url) : null)
+    ?? (item.primaryImage?.Url ? apiUrl(item.primaryImage.Url) : null)
+    ?? null;
 
   const auth = useAuth();
   const currentUser = auth?.user ?? null;
@@ -127,10 +137,10 @@ export default function ItemDetails() {
               {images.map(img => (
                 <div key={img.id || img.FileName || img.fileName} style={{ width: 160, textAlign: 'center' }}>
                   <div style={{ width: 160, height: 120, borderRadius: 8, overflow: 'hidden', background: '#f3f4f6' }}>
-                    <img src={img.url || img.Url} alt="img" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <img src={normalizeImage(img).url} alt="img" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   </div>
                   <div style={{ marginTop: 6, display: 'flex', gap: 6, justifyContent: 'center' }}>
-                    {img.isPrimary ? (
+                    {img.isPrimary ?? img.IsPrimary ? (
                       <div style={{ padding: '4px 8px', background: 'var(--accent)', color: '#fff', borderRadius: 6, fontSize: 12 }}>Primary</div>
                     ) : (
                       canManage ? (

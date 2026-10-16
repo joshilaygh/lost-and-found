@@ -22,7 +22,6 @@ namespace LostAndFoundApp.Tests.Integration
         [Fact]
         public async Task GetItems_ReturnsSuccessAndJson()
         {
-            // Configure the test host to use SQLite in-memory. Do NOT build a temporary
             // provider inside ConfigureServices (that can leave provider services registered)
             var factory = _factory.WithWebHostBuilder(builder =>
             {

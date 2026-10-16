@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { apiUrl } from '../services/apiUrl';
 
 export default function StatusesList() {
   const [statuses, setStatuses] = useState([]);
@@ -12,7 +13,7 @@ export default function StatusesList() {
   async function load() {
     setLoading(true);
     try {
-      const res = await fetch('/api/statuses', { headers });
+      const res = await fetch(apiUrl('/api/statuses'), { headers });
       if (!res.ok) throw new Error(await res.text());
       setStatuses(await res.json());
     } catch (e) {
@@ -25,7 +26,7 @@ export default function StatusesList() {
   useEffect(() => { load(); }, []);
 
   async function getUsage(id) {
-    const res = await fetch(`/api/statuses/${id}/usage`, { headers });
+    const res = await fetch(apiUrl(`/api/statuses/${id}/usage`), { headers });
     if (!res.ok) return 0;
     const data = await res.json();
     return data.itemCount || 0;
@@ -39,7 +40,7 @@ export default function StatusesList() {
     }
     if (!confirm('Delete this status?')) return;
     try {
-      const res = await fetch(`/api/statuses/${id}`, { method: 'DELETE', headers });
+      const res = await fetch(apiUrl(`/api/statuses/${id}`), { method: 'DELETE', headers });
       if (!res.ok) throw new Error(await res.text());
       await load();
     } catch (e) {
@@ -50,7 +51,7 @@ export default function StatusesList() {
   async function handleSave() {
     if (!form.name.trim()) { alert('Name is required'); return; }
     try {
-      const url = editing ? `/api/statuses/${editing}` : '/api/statuses';
+      const url = apiUrl(editing ? `/api/statuses/${editing}` : '/api/statuses');
       const method = editing ? 'PUT' : 'POST';
       const res = await fetch(url, { method, headers, body: JSON.stringify(form) });
       if (!res.ok) throw new Error(await res.text());

@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import itemMatches from '../services/itemMatches';
 import { listItems } from '../services/items';
+import { getItemImages } from '../services/itemImage';
+import { apiUrl } from '../services/apiUrl';
 
 function useDebounced(value, ms = 300) {
   const [v, setV] = useState(value);
@@ -10,6 +12,44 @@ function useDebounced(value, ms = 300) {
     return () => clearTimeout(t);
   }, [value, ms]);
   return v;
+}
+
+async function searchItemsForMatch(query, expectedType) {
+  const normalizedQuery = query.trim();
+  const numericQuery = /^\d+$/.test(normalizedQuery);
+  const result = await listItems({
+    q: '',
+    page: 1,
+    pageSize: 200,
+  });
+  const items = Array.isArray(result?.items) ? result.items : [];
+
+  const matchingItems = items
+    .filter(item => {
+      const itemTypeId = Number(item.typeId ?? item.TypeId);
+      const itemTypeName = String(item.typeName ?? item.TypeName ?? '').toLowerCase();
+      const matchesType = itemTypeId === expectedType.id || itemTypeName === expectedType.name;
+      if (!matchesType) return false;
+      if (numericQuery) return Number(item.id ?? item.Id) === Number(normalizedQuery);
+      const itemName = String(item.name ?? item.Name ?? '').toLowerCase();
+      return itemName.includes(normalizedQuery.toLowerCase());
+    })
+    .slice(0, 5);
+
+  return Promise.all(matchingItems.map(async item => {
+    const existingImage = item.primaryImageUrl ?? item.PrimaryImageUrl
+      ?? item.primaryImage?.url ?? item.primaryImage?.Url;
+    if (existingImage) return { ...item, suggestionImageUrl: apiUrl(existingImage) };
+
+    try {
+      const images = await getItemImages(item.id ?? item.Id);
+      const primary = images.find(image => image.isPrimary ?? image.IsPrimary) ?? images[0];
+      return { ...item, suggestionImageUrl: primary?.url ?? primary?.Url ?? null };
+    } catch (error) {
+      console.error(`Failed to load images for item ${item.id ?? item.Id}`, error);
+      return { ...item, suggestionImageUrl: null };
+    }
+  }));
 }
 
 export default function MatchCreate() {
@@ -35,10 +75,9 @@ export default function MatchCreate() {
     async function s() {
       if (!debLost) { setLostSuggestions([]); return; }
       try {
-        // search Lost items (include items regardless of whether they have an image)
-        const res = await listItems({ q: debLost, page: 1, pageSize: 5, typeId: 1 });
+        const suggestions = await searchItemsForMatch(debLost, { id: 1, name: 'lost' });
         if (!active) return;
-        setLostSuggestions(res.items || []);
+        setLostSuggestions(suggestions);
         setLostIndex(-1);
       } catch (err) { console.error(err); }
     }
@@ -51,10 +90,9 @@ export default function MatchCreate() {
     async function s() {
       if (!debFound) { setFoundSuggestions([]); return; }
       try {
-        // search Found items (include items regardless of whether they have an image)
-        const res = await listItems({ q: debFound, page: 1, pageSize: 5, typeId: 2 });
+        const suggestions = await searchItemsForMatch(debFound, { id: 2, name: 'found' });
         if (!active) return;
-        setFoundSuggestions(res.items || []);
+        setFoundSuggestions(suggestions);
         setFoundIndex(-1);
       } catch (err) { console.error(err); }
     }
@@ -139,7 +177,9 @@ export default function MatchCreate() {
             <div style={{ position: 'absolute', left: 0, right: 0, background: 'var(--card)', boxShadow: '0 6px 18px rgba(0,0,0,0.06)', zIndex: 60 }}>
               {lostSuggestions.map((it, idx) => (
                 <div key={it.id} onMouseEnter={() => setLostIndex(idx)} onMouseLeave={() => setLostIndex(-1)} style={{ padding: 8, cursor: 'pointer', display: 'flex', gap: 8, alignItems: 'center', background: lostIndex === idx ? '#eef2ff' : 'transparent' }} onClick={() => pickLost(it)}>
-                  {it.primaryImageUrl ? <img src={it.primaryImageUrl} alt="pri" style={{ width: 48, height: 36, objectFit: 'cover', borderRadius: 6 }} /> : <div style={{ width: 48, height: 36, background: '#f3f4f6', borderRadius: 6 }} />}
+                  {it.suggestionImageUrl
+                    ? <img src={apiUrl(it.suggestionImageUrl)} alt="pri" style={{ width: 48, height: 36, objectFit: 'cover', borderRadius: 6 }} />
+                    : <div style={{ width: 48, height: 36, background: '#f3f4f6', borderRadius: 6 }} />}
                   <div>{it.id} — {it.name}</div>
                 </div>
               ))}
@@ -154,7 +194,9 @@ export default function MatchCreate() {
             <div style={{ position: 'absolute', left: 0, right: 0, background: 'var(--card)', boxShadow: '0 6px 18px rgba(0,0,0,0.06)', zIndex: 60 }}>
               {foundSuggestions.map((it, idx) => (
                 <div key={it.id} onMouseEnter={() => setFoundIndex(idx)} onMouseLeave={() => setFoundIndex(-1)} style={{ padding: 8, cursor: 'pointer', display: 'flex', gap: 8, alignItems: 'center', background: foundIndex === idx ? '#eef2ff' : 'transparent' }} onClick={() => pickFound(it)}>
-                  {it.primaryImageUrl ? <img src={it.primaryImageUrl} alt="pri" style={{ width: 48, height: 36, objectFit: 'cover', borderRadius: 6 }} /> : <div style={{ width: 48, height: 36, background: '#f3f4f6', borderRadius: 6 }} />}
+                  {it.suggestionImageUrl
+                    ? <img src={apiUrl(it.suggestionImageUrl)} alt="pri" style={{ width: 48, height: 36, objectFit: 'cover', borderRadius: 6 }} />
+                    : <div style={{ width: 48, height: 36, background: '#f3f4f6', borderRadius: 6 }} />}
                   <div>{it.id} — {it.name}</div>
                 </div>
               ))}

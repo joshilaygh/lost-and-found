@@ -37,7 +37,7 @@ export default function UserDetails() {
       {/* Profile picture (served via backend avatar endpoint which caches remote images) */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
         <img
-          src={`/api/users/${otherId}/avatar`}
+          src={apiUrl(`/api/users/${otherId}/avatar`)}
           alt={`${user.firstName || user.displayName || 'User'} avatar`}
           style={{ width: 96, height: 96, objectFit: 'cover', borderRadius: 8, background: '#eee' }}
           onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = '/placeholder-avatar.png'; }}
@@ -62,3 +62,4 @@ export default function UserDetails() {
     </div>
   );
 }
+import { apiUrl } from '../services/apiUrl';

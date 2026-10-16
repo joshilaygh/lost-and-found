@@ -1,4 +1,6 @@
-const API = '/api/items';
+import { apiUrl } from './apiUrl';
+
+const API = apiUrl('/api/items');
 
 function getAuthHeaders() {
   const token = localStorage.getItem('app_jwt');
@@ -60,7 +62,7 @@ export async function listUserItems(userId, { page = 1, pageSize = 20, q = '', s
   if (categoryId) params.categoryId = categoryId;
   if (typeId) params.typeId = typeId;
   const qs = new URLSearchParams(params).toString();
-  const res = await fetch(`/api/users/${encodeURIComponent(userId)}/items?${qs}`, { headers: getAuthHeaders() });
+  const res = await fetch(apiUrl(`/api/users/${encodeURIComponent(userId)}/items?${qs}`), { headers: getAuthHeaders() });
   if (!res.ok) throw new Error(await res.text());
   return res.json(); // { total, page, pageSize, items }
 }

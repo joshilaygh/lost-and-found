@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { apiUrl } from '../services/apiUrl';
 
 export default function Profile({ user: propUser, onSignOut }) {
   const navigate = useNavigate();
@@ -8,7 +9,10 @@ export default function Profile({ user: propUser, onSignOut }) {
     try { return JSON.parse(localStorage.getItem('lf_user') || 'null'); } catch { return null; }
   })();
 
-  const avatarSrc = user?.avatarUrl || (user?.id ? `/api/users/${user.id}/avatar` : null) || 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80"><rect width="80" height="80" rx="12" fill="#e6eef3" /><text x="50%" y="55%" font-size="20" text-anchor="middle" fill="#6b7280">👤</text></svg>');
+  const avatarSrc = user?.avatarUrl
+    ? apiUrl(user.avatarUrl)
+    : (user?.id ? apiUrl(`/api/users/${user.id}/avatar`) : null)
+    || 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80"><rect width="80" height="80" rx="12" fill="#e6eef3" /><text x="50%" y="55%" font-size="20" text-anchor="middle" fill="#6b7280">👤</text></svg>');
 
   function handleSignOut() {
     localStorage.removeItem('app_jwt');

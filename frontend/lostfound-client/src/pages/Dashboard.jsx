@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getUnreadMessageCount, fetchNotifications } from '../services/messageApi';
+import { listUserItems } from '../services/items';
 
 export default function Dashboard({ user }) {
   const navigate = useNavigate();
@@ -9,6 +10,7 @@ export default function Dashboard({ user }) {
   });
   const [unreadUsersCount, setUnreadUsersCount] = useState(0);
   const [notifCount, setNotifCount] = useState(0);
+  const [activeItems, setActiveItems] = useState(0);
 
   useEffect(() => {
     function isItemMatchNotification(n) {
@@ -29,6 +31,25 @@ export default function Dashboard({ user }) {
         setNotifCount(cnt);
       } catch (err) {
         // ignore
+      }
+    }
+
+    async function loadActiveItems() {
+      if (!user?.id) {
+        setActiveItems(0);
+        return;
+      }
+
+      try {
+        const result = await listUserItems(user.id, { page: 1, pageSize: 200 });
+        const items = Array.isArray(result?.items) ? result.items : [];
+        const activeCount = items.filter(item => {
+          const status = item.statusName ?? item.StatusName ?? item.status ?? item.Status;
+          return typeof status === 'string' && status.toLowerCase() === 'active';
+        }).length;
+        setActiveItems(activeCount);
+      } catch (err) {
+        console.error('Failed to load active item count', err);
       }
     }
     function onEvent(e) {
@@ -52,6 +73,8 @@ export default function Dashboard({ user }) {
     loadCount();
     // load notification count (item-match only)
     loadNotifCount();
+    loadActiveItems();
+    const activeItemsTimer = window.setInterval(loadActiveItems, 30000);
 
     // refresh notification count when an item-match notification arrives elsewhere in the app
     function onHasNewNotifications(e) {
@@ -72,8 +95,14 @@ export default function Dashboard({ user }) {
     function onHasNew(e) { try { setHasNewMessages(Boolean(e?.detail)); } catch { setHasNewMessages(false); } loadCount(); }
     window.addEventListener('lf:hasNewMessages', onHasNew);
 
-    return () => { window.removeEventListener('lf:hasNewMessages', onEvent); window.removeEventListener('storage', onStorage); window.removeEventListener('lf:hasNewMessages', onHasNew); window.removeEventListener('lf:hasNewNotifications', onHasNewNotifications); };
-  }, []);
+    return () => {
+      window.clearInterval(activeItemsTimer);
+      window.removeEventListener('lf:hasNewMessages', onEvent);
+      window.removeEventListener('storage', onStorage);
+      window.removeEventListener('lf:hasNewMessages', onHasNew);
+      window.removeEventListener('lf:hasNewNotifications', onHasNewNotifications);
+    };
+  }, [user?.id]);
   return (
     <div style={{ width: '100%' }}>
       <div className="card" style={{ marginBottom: '1.5rem' }}>
@@ -103,8 +132,8 @@ export default function Dashboard({ user }) {
         <div className="col-4">
           <div className="card" style={{ textAlign: 'center' }}>
             <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>👁️</div>
-            <h3 style={{ margin: 0, fontSize: '2rem', color: 'var(--accent)' }}>12</h3>
-            <p className="text-muted" style={{ marginTop: '0.5rem' }}>Active Watchers</p>
+            <h3 style={{ margin: 0, fontSize: '2rem', color: 'var(--accent)' }}>{activeItems}</h3>
+            <p className="text-muted" style={{ marginTop: '0.5rem' }}>Active Items</p>
           </div>
         </div>
         <div className="col-4">

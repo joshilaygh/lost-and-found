@@ -1,7 +1,8 @@
 import axios from 'axios';
+import API_BASE from './apiUrl';
 
 const api = axios.create({
-  baseURL: '/', // adjust if API is on different origin
+  baseURL: API_BASE || '/',
 });
 
 // attach JWT for requests

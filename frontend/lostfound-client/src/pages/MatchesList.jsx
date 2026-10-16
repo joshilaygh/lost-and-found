@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import itemMatches from '../services/itemMatches';
 import { getItem } from '../services/items';
 import { getItemImages } from '../services/itemImage';
+import { apiUrl } from '../services/apiUrl';
 
 export default function MatchesList() {
   const [matches, setMatches] = useState([]);
@@ -21,10 +22,10 @@ export default function MatchesList() {
             getItem(m.foundItemId).catch(() => null),
             getItemImages(m.lostItemId).catch(() => []),
             getItemImages(m.foundItemId).catch(() => []),
-            m.creatorUserId ? fetch(`/api/users/${m.creatorUserId}`).then(r => r.ok ? r.json() : null).catch(() => null) : null
+            m.creatorUserId ? fetch(apiUrl(`/api/users/${m.creatorUserId}`)).then(r => r.ok ? r.json() : null).catch(() => null) : null
           ]);
 
-          const pick = imgs => (imgs && imgs.length ? (imgs.find(i => i.isPrimary || i.IsPrimary) || imgs[0]).url || imgs[0].Url || null : null);
+          const pick = imgs => (imgs && imgs.length ? (imgs.find(i => i.isPrimary || i.IsPrimary) || imgs[0]).url || null : null);
 
           return {
             ...m,

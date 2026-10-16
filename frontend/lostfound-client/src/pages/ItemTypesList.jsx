@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { apiUrl } from '../services/apiUrl';
 
 export default function ItemTypesList() {
   const [types, setTypes] = useState([]);
@@ -12,7 +13,7 @@ export default function ItemTypesList() {
   async function load() {
     setLoading(true);
     try {
-      const res = await fetch('/api/item-types', { headers });
+      const res = await fetch(apiUrl('/api/item-types'), { headers });
       if (!res.ok) throw new Error(await res.text());
       setTypes(await res.json());
     } catch (e) {
@@ -25,7 +26,7 @@ export default function ItemTypesList() {
   useEffect(() => { load(); }, []);
 
   async function getUsage(id) {
-    const res = await fetch(`/api/item-types/${id}/usage`, { headers });
+    const res = await fetch(apiUrl(`/api/item-types/${id}/usage`), { headers });
     if (!res.ok) return 0;
     const data = await res.json();
     return data.itemCount || 0;
@@ -39,7 +40,7 @@ export default function ItemTypesList() {
     }
     if (!confirm('Delete this type?')) return;
     try {
-      const res = await fetch(`/api/item-types/${id}`, { method: 'DELETE', headers });
+      const res = await fetch(apiUrl(`/api/item-types/${id}`), { method: 'DELETE', headers });
       if (!res.ok) throw new Error(await res.text());
       await load();
     } catch (e) {
@@ -50,7 +51,7 @@ export default function ItemTypesList() {
   async function handleSave() {
     if (!form.name.trim()) { alert('Name is required'); return; }
     try {
-      const url = editing ? `/api/item-types/${editing}` : '/api/item-types';
+      const url = apiUrl(editing ? `/api/item-types/${editing}` : '/api/item-types');
       const method = editing ? 'PUT' : 'POST';
       const res = await fetch(url, { method, headers, body: JSON.stringify(form) });
       if (!res.ok) throw new Error(await res.text());
@@ -66,7 +67,7 @@ export default function ItemTypesList() {
     if (!targetId) { alert('Select a target type'); return; }
     if (!confirm('Merge all items from this type into the target?')) return;
     try {
-      const res = await fetch(`/api/item-types/${sourceId}/merge-into/${targetId}`, { method: 'POST', headers });
+      const res = await fetch(apiUrl(`/api/item-types/${sourceId}/merge-into/${targetId}`), { method: 'POST', headers });
       if (!res.ok) throw new Error(await res.text());
       await load();
       alert('Merge successful');

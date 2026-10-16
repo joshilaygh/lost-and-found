@@ -4,6 +4,7 @@ import { useAuth } from '../AuthContext';
 import itemMatches from '../services/itemMatches';
 import { getItem } from '../services/items';
 import { getItemImages } from '../services/itemImage';
+import { apiUrl } from '../services/apiUrl';
 
 export default function ItemMatchesList() {
   const { id } = useParams();
@@ -15,7 +16,7 @@ export default function ItemMatchesList() {
   async function load() {
     setLoading(true);
     try {
-      const res = await fetch(`/api/item-matches/item/${id}`);
+      const res = await fetch(apiUrl(`/api/item-matches/item/${id}`), { headers: { Authorization: `Bearer ${localStorage.getItem('app_jwt')}` } });
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
 
@@ -25,9 +26,9 @@ export default function ItemMatchesList() {
           getItem(m.foundItemId).catch(() => null),
           getItemImages(m.lostItemId).catch(() => []),
           getItemImages(m.foundItemId).catch(() => []),
-          m.creatorUserId ? fetch(`/api/users/${m.creatorUserId}`).then(r => r.ok ? r.json() : null).catch(() => null) : null
+          m.creatorUserId ? fetch(apiUrl(`/api/users/${m.creatorUserId}`), { headers: { Authorization: `Bearer ${localStorage.getItem('app_jwt')}` } }).then(r => r.ok ? r.json() : null).catch(() => null) : null
         ]);
-        const pick = imgs => (imgs && imgs.length ? (imgs.find(i => i.isPrimary || i.IsPrimary) || imgs[0]).url || imgs[0].Url || null : null);
+        const pick = imgs => (imgs && imgs.length ? (imgs.find(i => i.isPrimary || i.IsPrimary) || imgs[0]).url || null : null);
         return { ...m, lostItem: lost, foundItem: found, lostImageUrl: pick(lostImgs), foundImageUrl: pick(foundImgs), creatorUser: creator };
       }));
 

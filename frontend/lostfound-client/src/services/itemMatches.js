@@ -1,4 +1,6 @@
-const API = '/api/item-matches';
+import { apiUrl } from './apiUrl';
+
+const API = apiUrl('/api/item-matches');
 
 function authHeaders() {
   const token = localStorage.getItem('app_jwt');

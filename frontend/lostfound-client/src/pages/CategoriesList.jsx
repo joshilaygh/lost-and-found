@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { apiUrl } from '../services/apiUrl';
 
 export default function CategoriesList() {
   const [categories, setCategories] = useState([]);
@@ -12,7 +13,7 @@ export default function CategoriesList() {
   async function load() {
     setLoading(true);
     try {
-      const res = await fetch('/api/categories', { headers });
+      const res = await fetch(apiUrl('/api/categories'), { headers });
       if (!res.ok) throw new Error(await res.text());
       setCategories(await res.json());
     } catch (e) {
@@ -25,7 +26,7 @@ export default function CategoriesList() {
   useEffect(() => { load(); }, []);
 
   async function getUsage(id) {
-    const res = await fetch(`/api/categories/${id}/usage`, { headers });
+    const res = await fetch(apiUrl(`/api/categories/${id}/usage`), { headers });
     if (!res.ok) return 0;
     const data = await res.json();
     return data.itemCount || 0;
@@ -39,7 +40,7 @@ export default function CategoriesList() {
     }
     if (!confirm('Delete this category?')) return;
     try {
-      const res = await fetch(`/api/categories/${id}`, { method: 'DELETE', headers });
+      const res = await fetch(apiUrl(`/api/categories/${id}`), { method: 'DELETE', headers });
       if (!res.ok) throw new Error(await res.text());
       await load();
     } catch (e) {
@@ -50,7 +51,7 @@ export default function CategoriesList() {
   async function handleSave() {
     if (!form.name.trim()) { alert('Name is required'); return; }
     try {
-      const url = editing ? `/api/categories/${editing}` : '/api/categories';
+      const url = apiUrl(editing ? `/api/categories/${editing}` : '/api/categories');
       const method = editing ? 'PUT' : 'POST';
       const res = await fetch(url, { method, headers, body: JSON.stringify(form) });
       if (!res.ok) throw new Error(await res.text());
@@ -66,7 +67,7 @@ export default function CategoriesList() {
     if (!targetId) { alert('Select a target category'); return; }
     if (!confirm('Merge all items from this category into the target?')) return;
     try {
-      const res = await fetch(`/api/categories/${sourceId}/merge-into/${targetId}`, { method: 'POST', headers });
+      const res = await fetch(apiUrl(`/api/categories/${sourceId}/merge-into/${targetId}`), { method: 'POST', headers });
       if (!res.ok) throw new Error(await res.text());
       await load();
       alert('Merge successful');
